@@ -1,0 +1,235 @@
+\hypertarget{classfaces}{}\section{faces Class Reference}
+\label{classfaces}\index{faces@{faces}}
+
+
+Class representing list of faces of 3D object.  
+
+
+
+
+{\ttfamily \#include $<$faces.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classfaces_a0243aedce9f1e840916474a184c487c9}{faces}} (\mbox{\hyperlink{classedges}{edges}} $\ast$)
+\begin{DoxyCompactList}\small\item\em Constructor to initialize object of faces. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classfaces_acf9ea2364fe3e8886057170f0071663c}{add\+Face}} (\mbox{\hyperlink{structface}{face}} $\ast$)
+\begin{DoxyCompactList}\small\item\em Adds a face to the list of faces f. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classfaces_a538a694eaec8c4d5759b87f688f0405b}{change\+Frame}} (\mbox{\hyperlink{structplane}{plane}}, \mbox{\hyperlink{structplane}{plane}}, \mbox{\hyperlink{structplane}{plane}})
+\begin{DoxyCompactList}\small\item\em Transform all faces according to new coordinate system. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classfaces_a1f56842eabd141ff237689834b3efb8c}{check\+Hidden}} (\mbox{\hyperlink{structedge}{edge}} $\ast$)
+\begin{DoxyCompactList}\small\item\em Checks if given edge is hidden. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classfaces_a71751dbb77129bd08594b2d3d563a7fd}{make\+Faces}} ()
+\begin{DoxyCompactList}\small\item\em Makes all possible faces and adds to f. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classfaces_a40dea4a75ea92a062b5a3fab8246269b}{remove\+Pseudo\+Faces}} ()
+\begin{DoxyCompactList}\small\item\em Removes Pseudo faces. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classfaces_abdf6691e92a27f82d0ee45f7ab87a429}{correct\+Face\+Orientation}} ()
+\begin{DoxyCompactList}\small\item\em Corrects orientation of each face. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classedges}{edges}} \& \mbox{\hyperlink{classfaces_a0c3f9f40aa96dc960a4eb42408b50574}{get\+Edges}} ()
+\begin{DoxyCompactList}\small\item\em Returns the list of edges. \end{DoxyCompactList}\item 
+vector$<$ \mbox{\hyperlink{structface}{face}} $>$ \& \mbox{\hyperlink{classfaces_a4522c25dc2608217b6bebfe550ec79a5}{get\+Faces}} ()
+\begin{DoxyCompactList}\small\item\em Returns the list of faces. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+vector$<$ \mbox{\hyperlink{structface}{face}} $>$ \mbox{\hyperlink{classfaces_a66837134b8414721f7461840769bcc65}{f}}
+\begin{DoxyCompactList}\small\item\em list of faces \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classedges}{edges}} \mbox{\hyperlink{classfaces_a7b0632e23cbcdf8cbcabdcaad85fda7b}{e}}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Class representing list of faces of 3D object. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classfaces_a0243aedce9f1e840916474a184c487c9}\label{classfaces_a0243aedce9f1e840916474a184c487c9}} 
+\index{faces@{faces}!faces@{faces}}
+\index{faces@{faces}!faces@{faces}}
+\subsubsection{\texorpdfstring{faces()}{faces()}}
+{\footnotesize\ttfamily faces\+::faces (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classedges}{edges}} $\ast$}]{e }\end{DoxyParamCaption})}
+
+
+
+Constructor to initialize object of faces. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em e} & is the set of edges \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void 
+\end{DoxyReturn}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classfaces_acf9ea2364fe3e8886057170f0071663c}\label{classfaces_acf9ea2364fe3e8886057170f0071663c}} 
+\index{faces@{faces}!add\+Face@{add\+Face}}
+\index{add\+Face@{add\+Face}!faces@{faces}}
+\subsubsection{\texorpdfstring{add\+Face()}{addFace()}}
+{\footnotesize\ttfamily bool faces\+::add\+Face (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structface}{face}} $\ast$}]{a }\end{DoxyParamCaption})}
+
+
+
+Adds a face to the list of faces f. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & is the face to be added \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+boolean that returns true if face is valid and not already present 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classfaces_a538a694eaec8c4d5759b87f688f0405b}\label{classfaces_a538a694eaec8c4d5759b87f688f0405b}} 
+\index{faces@{faces}!change\+Frame@{change\+Frame}}
+\index{change\+Frame@{change\+Frame}!faces@{faces}}
+\subsubsection{\texorpdfstring{change\+Frame()}{changeFrame()}}
+{\footnotesize\ttfamily void faces\+::change\+Frame (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structplane}{plane}}}]{a,  }\item[{\mbox{\hyperlink{structplane}{plane}}}]{b,  }\item[{\mbox{\hyperlink{structplane}{plane}}}]{c }\end{DoxyParamCaption})}
+
+
+
+Transform all faces according to new coordinate system. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a,b} & and c are the 3 projection planes that are to be treated as XY, YZ and ZX planes respectively \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classfaces_a1f56842eabd141ff237689834b3efb8c}\label{classfaces_a1f56842eabd141ff237689834b3efb8c}} 
+\index{faces@{faces}!check\+Hidden@{check\+Hidden}}
+\index{check\+Hidden@{check\+Hidden}!faces@{faces}}
+\subsubsection{\texorpdfstring{check\+Hidden()}{checkHidden()}}
+{\footnotesize\ttfamily void faces\+::check\+Hidden (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structedge}{edge}} $\ast$}]{a }\end{DoxyParamCaption})}
+
+
+
+Checks if given edge is hidden. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em void} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void
+\end{DoxyReturn}
+It compares edge a with all faces to check if it is hidden by any of the faces \mbox{\Hypertarget{classfaces_abdf6691e92a27f82d0ee45f7ab87a429}\label{classfaces_abdf6691e92a27f82d0ee45f7ab87a429}} 
+\index{faces@{faces}!correct\+Face\+Orientation@{correct\+Face\+Orientation}}
+\index{correct\+Face\+Orientation@{correct\+Face\+Orientation}!faces@{faces}}
+\subsubsection{\texorpdfstring{correct\+Face\+Orientation()}{correctFaceOrientation()}}
+{\footnotesize\ttfamily void faces\+::correct\+Face\+Orientation (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Corrects orientation of each face. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em void} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void
+\end{DoxyReturn}
+It finds the correct orientation of each face of the solid using Moebius Rule \mbox{\Hypertarget{classfaces_a0c3f9f40aa96dc960a4eb42408b50574}\label{classfaces_a0c3f9f40aa96dc960a4eb42408b50574}} 
+\index{faces@{faces}!get\+Edges@{get\+Edges}}
+\index{get\+Edges@{get\+Edges}!faces@{faces}}
+\subsubsection{\texorpdfstring{get\+Edges()}{getEdges()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classedges}{edges}} \& faces\+::get\+Edges (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the list of edges. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em void} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to the list of edges 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classfaces_a4522c25dc2608217b6bebfe550ec79a5}\label{classfaces_a4522c25dc2608217b6bebfe550ec79a5}} 
+\index{faces@{faces}!get\+Faces@{get\+Faces}}
+\index{get\+Faces@{get\+Faces}!faces@{faces}}
+\subsubsection{\texorpdfstring{get\+Faces()}{getFaces()}}
+{\footnotesize\ttfamily vector$<$ \mbox{\hyperlink{structface}{face}} $>$ \& faces\+::get\+Faces (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the list of faces. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em void} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to the list of faces f 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classfaces_a71751dbb77129bd08594b2d3d563a7fd}\label{classfaces_a71751dbb77129bd08594b2d3d563a7fd}} 
+\index{faces@{faces}!make\+Faces@{make\+Faces}}
+\index{make\+Faces@{make\+Faces}!faces@{faces}}
+\subsubsection{\texorpdfstring{make\+Faces()}{makeFaces()}}
+{\footnotesize\ttfamily void faces\+::make\+Faces (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Makes all possible faces and adds to f. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em void} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void
+\end{DoxyReturn}
+It makes all possible faces using Minimum Internal Angle algorithm and adds the faces to f. \mbox{\Hypertarget{classfaces_a40dea4a75ea92a062b5a3fab8246269b}\label{classfaces_a40dea4a75ea92a062b5a3fab8246269b}} 
+\index{faces@{faces}!remove\+Pseudo\+Faces@{remove\+Pseudo\+Faces}}
+\index{remove\+Pseudo\+Faces@{remove\+Pseudo\+Faces}!faces@{faces}}
+\subsubsection{\texorpdfstring{remove\+Pseudo\+Faces()}{removePseudoFaces()}}
+{\footnotesize\ttfamily void faces\+::remove\+Pseudo\+Faces (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Removes Pseudo faces. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em void} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void
+\end{DoxyReturn}
+It removes all the Pseudo faces using Decision Chaining algorithm 
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classfaces_a7b0632e23cbcdf8cbcabdcaad85fda7b}\label{classfaces_a7b0632e23cbcdf8cbcabdcaad85fda7b}} 
+\index{faces@{faces}!e@{e}}
+\index{e@{e}!faces@{faces}}
+\subsubsection{\texorpdfstring{e}{e}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classedges}{edges}} faces\+::e\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{classfaces_a66837134b8414721f7461840769bcc65}\label{classfaces_a66837134b8414721f7461840769bcc65}} 
+\index{faces@{faces}!f@{f}}
+\index{f@{f}!faces@{faces}}
+\subsubsection{\texorpdfstring{f}{f}}
+{\footnotesize\ttfamily vector$<$\mbox{\hyperlink{structface}{face}}$>$ faces\+::f\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+list of faces 
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/madhur/\+Documents/\+Sem 6/\+C\+O\+P290/\+Assignment 1/git/assignment\+\_\+1/\+Code/include/\mbox{\hyperlink{faces_8h}{faces.\+h}}\item 
+/\+Users/madhur/\+Documents/\+Sem 6/\+C\+O\+P290/\+Assignment 1/git/assignment\+\_\+1/\+Code/src/\mbox{\hyperlink{faces_8cpp}{faces.\+cpp}}\end{DoxyCompactItemize}

@@ -1,0 +1,453 @@
+bplist00Ò_WebMainResource_WebSubresourcesÕ	
+^WebResourceURL_WebResourceFrameName_WebResourceData_WebResourceMIMEType_WebResourceTextEncodingName_"http://alienryderflex.com/polygon/POG<html><head>
+<title>Determining Whether A Point Is Inside A Complex Polygon</title>
+<link rel="stylesheet" href="../tutorial.css">
+<meta name="viewport" content="width=700">
+<style></style></head>
+
+<body bgcolor="#FFFFFF">
+
+<span style="font-size:14pt"><b>Point-In-Polygon Algorithm â€” Determining Whether A Point Is Inside A Complex
+Polygon</b></span><br>
+
+<span style="font-size: 8pt"><i>Â© 1998,2006,2007 Darel Rex Finley. This complete article, unmodified, may be freely
+distributed for educational purposes.</i></span><br><br>
+
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-3855777271744084";
+/* Tutorial Banner Medium */
+google_ad_slot = "4226557120";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<br><br>
+
+<b><i>Visit the <a href="http://alienryderflex.com/polyspline/">new page</a> which adds spline curves to this
+technique! Also visit the <a href="http://alienryderflex.com/shortest_path">shortest-path-through-polygon
+page</a>!</i></b><br><br><br>
+
+<img src="Diagram_1.gif"><b>Figure 1</b><br><br>
+
+Figure 1 demonstrates a typical case of a severely concave polygon with 14 sides. The red dot is a point which
+needs to be tested, to determine if it lies inside the polygon.<br><br>
+
+The solution is to compare each side of the polygon to the Y (vertical) coordinate of the test point, and compile a list
+of <b>nodes</b>, where each node is a point where one side crosses the Y threshold of the test point. In this example,
+eight sides of the polygon cross the Y threshold, while the other six sides do not. Then, if there are an
+<i>odd</i> number of nodes on each side of the test point, then it is inside the polygon; if there are an <i>even</i>
+number of nodes on each side of the test point, then it is outside the polygon. In our example, there are five
+nodes to the left of the test point, and three nodes to the right. Since five and three are odd numbers, our test
+point is inside the polygon.<br><br>
+
+(Note: This algorithm does not care whether the polygon is traced in clockwise or counterclockwise
+fashion.)<br><br><br>
+
+<img src="Diagram_2.gif"><b>Figure 2</b><br><br>
+
+Figure 2 shows what happens if the polygon crosses itself. In this example, a ten-sided polygon has lines which
+cross each other. The effect is much like â€œexclusive or,â€ or XOR as it is known to assembly-language
+programmers. The portions of the polygon which overlap cancel each other out. So, the test point is outside
+the polygon, as indicated by the even number of nodes (two and two) on either side of it.<br><br><br>
+
+<img src="Diagram_3.gif"><b>Figure 3</b><br><br>
+
+In Figure 3, the six-sided polygon does not overlap itself, but it does have lines that cross. This is not a
+problem; the algorithm still works fine.<br><br><br>
+
+<img src="Diagram_4.gif"><b>Figure 4</b><br><br>
+
+Figure 4 demonstrates the problem that results when a vertex of the polygon falls directly on the Y threshold.&nbsp;
+Since sides <b>a</b> and <b>b</b> both touch the threshold, should they both generate a node? No, because then
+there would be two nodes on each side of the test point and so the test would say it was outside of the polygon, when it
+clearly is not!<br><br>
+
+The solution to this situation is simple. Points which are exactly on the Y threshold must be considered to belong
+to one side of the threshold. Letâ€™s say we arbitrarily decide that points on the Y threshold will belong to the
+â€œaboveâ€ side of the threshold. Then, side <b>a</b> generates a node, since it has one endpoint below the
+threshold and its other endpoint on-or-above the threshold. Side <b>b</b> does not generate a node, because both of
+its endpoints are on-or-above the threshold, so it is not considered to be a threshold-crossing side.<br><br><br>
+
+<img src="Diagram_5.gif"><b>Figure 5</b><br><br>
+
+Figure 5 shows the case of a polygon in which one of its sides lies entirely on the threshold. Simply follow the
+rule as described concerning Figure 4. Side <b>c</b> generates a node, because it has one endpoint below the
+threshold, and its other endpoint on-or-above the threshold. Side <b>d</b> does not generate a node, because it has
+both endpoints on-or-above the threshold. And side <b>e</b> also does not generate a node, because it has both
+endpoints on-or-above the threshold.<br><br><br>
+
+<img src="crowns.gif"><b>Figure 6</b><br><br>
+
+Figure 6 illustrates a special case brought to my attention by John David Munch of Cal Poly. One interior angle of
+the polygon just touches the Y-threshold of the test point. This is OK. In the upper picture, only one side
+(hilited in red) generates a node to the left of the test point, and in the bottom example, three sides do. Either
+way, the number is odd, and the test point will be deemed inside the polygon.<br><br><br>
+
+<b>Polygon Edge</b><br><br>
+
+If the test point is on the border of the polygon, this algorithm will deliver unpredictable results; i.e. the result may
+be â€œinsideâ€ or â€œoutsideâ€ depending on arbitrary factors such as how the polygon is oriented with
+respect to the coordinate system. (That is not generally a problem, since the edge of the polygon is infinitely
+thin anyway, and points that fall right on the edge can go either way without hurting the look of the polygon.)<br><br><br>
+
+<b>C Code Sample</b><br><br>
+
+<table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td bgcolor="#E8E8E8">
+<code><font color="#008000">//&nbsp; Globals which should be set before calling this function:<br>
+//<br>
+//&nbsp; int&nbsp;&nbsp;&nbsp;&nbsp;polyCorners&nbsp;&nbsp;=&nbsp;&nbsp;how many corners the polygon has (no repeats)<br>
+//&nbsp; float&nbsp;&nbsp;polyX[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;horizontal coordinates of corners<br>
+//&nbsp; float&nbsp;&nbsp;polyY[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;vertical coordinates of corners<br>
+//&nbsp; float&nbsp;&nbsp;x, y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;point to be tested<br>
+//<br>
+//&nbsp; (Globals are used in this example for purposes of speed.&nbsp; Change as<br>
+//&nbsp; desired.)<br>
+//<br>
+//&nbsp; The function will return YES if the point x,y is inside the polygon, or<br>
+//&nbsp; NO if it is not.&nbsp; If the point is exactly on the edge of the polygon,<br>
+//&nbsp; then the function may return YES or NO.<br>
+//<br>
+//&nbsp; Note that division by zero is avoided because the division is protected<br>
+//&nbsp; by the "if" clause which surrounds it.</font><br><br>
+
+bool pointInPolygon() {<br><br>
+
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;i, j=polyCorners-1 ;<br>
+&nbsp;&nbsp;bool&nbsp;&nbsp;oddNodes=NO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ;<br><br>
+
+&nbsp;&nbsp;for (i=0; i&lt;polyCorners; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (polyY[i]&lt;y &amp;&amp; polyY[j]&gt;=y<br>
+&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;polyY[j]&lt;y &amp;&amp; polyY[i]&gt;=y) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])&lt;x) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;oddNodes=!oddNodes; }}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;j=i; }<br><br>
+
+&nbsp;&nbsp;return oddNodes; }</code>
+</td></tr></tbody></table><br><br>
+
+Hereâ€™s an efficiency improvement provided by Nathan Mercer.&nbsp; The blue code eliminates calculations on sides that are entirely to the right of the test point.&nbsp; Though this might be occasionally slower for some polygons, it is probably faster for most.<br><br>
+
+<table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td bgcolor="#E8E8E8">
+<code><font color="#008000">//&nbsp; Globals which should be set before calling this function:<br>
+//<br>
+//&nbsp; int&nbsp;&nbsp;&nbsp;&nbsp;polyCorners&nbsp;&nbsp;=&nbsp;&nbsp;how many corners the polygon has (no repeats)<br>
+//&nbsp; float&nbsp;&nbsp;polyX[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;horizontal coordinates of corners<br>
+//&nbsp; float&nbsp;&nbsp;polyY[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;vertical coordinates of corners<br>
+//&nbsp; float&nbsp;&nbsp;x, y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;point to be tested<br>
+//<br>
+//&nbsp; (Globals are used in this example for purposes of speed.&nbsp; Change as<br>
+//&nbsp; desired.)<br>
+//<br>
+//&nbsp; The function will return YES if the point x,y is inside the polygon, or<br>
+//&nbsp; NO if it is not.&nbsp; If the point is exactly on the edge of the polygon,<br>
+//&nbsp; then the function may return YES or NO.<br>
+//<br>
+//&nbsp; Note that division by zero is avoided because the division is protected<br>
+//&nbsp; by the "if" clause which surrounds it.</font><br><br>
+
+bool pointInPolygon() {<br><br>
+
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;i, j=polyCorners-1 ;<br>
+&nbsp;&nbsp;bool&nbsp;&nbsp;oddNodes=NO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ;<br><br>
+
+&nbsp;&nbsp;for (i=0; i&lt;polyCorners; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if ((polyY[i]&lt; y &amp;&amp; polyY[j]&gt;=y<br>
+&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;polyY[j]&lt; y &amp;&amp; polyY[i]&gt;=y)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008080">&amp;&amp;&nbsp; (polyX[i]&lt;=x || polyX[j]&lt;=x)</font>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])&lt;x) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;oddNodes=!oddNodes; }}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;j=i; }<br><br>
+
+&nbsp;&nbsp;return oddNodes; }</code>
+</td></tr></tbody></table><br><br>
+
+Hereâ€™s another efficiency improvement provided by Lascha Lagidse. The inner â€œifâ€ statement is eliminated and replaced with an exclusive-OR operation.<br><br>
+
+<table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td bgcolor="#E8E8E8">
+<code><font color="#008000">//&nbsp; Globals which should be set before calling this function:<br>
+//<br>
+//&nbsp; int&nbsp;&nbsp;&nbsp;&nbsp;polyCorners&nbsp;&nbsp;=&nbsp;&nbsp;how many corners the polygon has<br>
+//&nbsp; float&nbsp;&nbsp;polyX[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;horizontal coordinates of corners<br>
+//&nbsp; float&nbsp;&nbsp;polyY[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;vertical coordinates of corners<br>
+//&nbsp; float&nbsp;&nbsp;x, y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;point to be tested<br>
+//<br>
+//&nbsp; (Globals are used in this example for purposes of speed.&nbsp; Change as<br>
+//&nbsp; desired.)<br>
+//<br>
+//&nbsp; The function will return YES if the point x,y is inside the polygon, or<br>
+//&nbsp; NO if it is not.&nbsp; If the point is exactly on the edge of the polygon,<br>
+//&nbsp; then the function may return YES or NO.<br>
+//<br>
+//&nbsp; Note that division by zero is avoided because the division is protected<br>
+//&nbsp; by the "if" clause which surrounds it.</font><br><br>
+
+bool pointInPolygon() {<br><br>
+
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;i, j=polyCorners-1 ;<br>
+&nbsp;&nbsp;bool&nbsp;&nbsp;oddNodes=NO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ;<br><br>
+
+&nbsp;&nbsp;for (i=0; i&lt;polyCorners; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if ((polyY[i]&lt; y &amp;&amp; polyY[j]&gt;=y<br>
+&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;polyY[j]&lt; y &amp;&amp; polyY[i]&gt;=y)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&amp;&amp;&nbsp; (polyX[i]&lt;=x || polyX[j]&lt;=x)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;oddNodes^=(polyX[i]+(y-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i])&lt;x); }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;j=i; }<br><br>
+
+&nbsp;&nbsp;return oddNodes; }</code>
+</td></tr></tbody></table><br><br>
+
+
+Hereâ€™s a pre-calcuation efficiency improvement provided by Patrick Mullen. This is useful if you have many points that need to be tested against the same (static) polygon:<br><br>
+
+<table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td bgcolor="#E8E8E8">
+<code><font color="#008000">//&nbsp; Globals which should be set before calling these functions:<br>
+//<br>
+//&nbsp; int&nbsp;&nbsp;&nbsp; polyCorners&nbsp; =&nbsp; how many corners the polygon has (no repeats)<br>
+//&nbsp; float&nbsp; polyX[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; =&nbsp; horizontal coordinates of corners<br>
+//&nbsp; float&nbsp; polyY[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; =&nbsp; vertical coordinates of corners<br>
+//&nbsp; float&nbsp; x, y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; =&nbsp; point to be tested<br>
+//<br>
+//&nbsp; The following global arrays should be allocated before calling these functions:<br>
+//<br>
+//&nbsp; float&nbsp; constant[] = storage for precalculated constants (same size as polyX)<br>
+//&nbsp; float&nbsp; multiple[] = storage for precalculated multipliers (same size as polyX)<br>
+//<br>
+//&nbsp; (Globals are used in this example for purposes of speed.&nbsp; Change as<br>
+//&nbsp; desired.)<br>
+//<br>
+//&nbsp; USAGE:<br>
+//&nbsp; Call precalc_values() to initialize the constant[] and multiple[] arrays,<br>
+//&nbsp; then call pointInPolygon(x, y) to determine if the point is in the polygon.<br>
+//<br>
+//&nbsp; The function will return YES if the point x,y is inside the polygon, or<br>
+//&nbsp; NO if it is not.&nbsp; If the point is exactly on the edge of the polygon,<br>
+//&nbsp; then the function may return YES or NO.<br>
+//<br>
+//&nbsp; Note that division by zero is avoided because the division is protected<br>
+//&nbsp; by the "if" clause which surrounds it.</font><br>
+<br>
+void precalc_values() {<br>
+<br>
+&nbsp; int&nbsp;&nbsp; i, j=polyCorners-1 ;<br>
+<br>
+&nbsp; for(i=0; i&lt;polyCorners; i++) {<br>
+&nbsp;&nbsp;&nbsp; if(polyY[j]==polyY[i]) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; constant[i]=polyX[i];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; multiple[i]=0; }<br>
+&nbsp;&nbsp;&nbsp; else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; constant[i]=polyX[i]-(polyY[i]*polyX[j])/(polyY[j]-polyY[i])+(polyY[i]*polyX[i])/(polyY[j]-polyY[i]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; multiple[i]=(polyX[j]-polyX[i])/(polyY[j]-polyY[i]); }<br>
+&nbsp;&nbsp;&nbsp; j=i; }}<br>
+<br>
+bool pointInPolygon() {<br>
+<br>
+&nbsp; int&nbsp;&nbsp; i, j=polyCorners-1 ;<br>
+&nbsp; bool&nbsp; oddNodes=NO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ;<br>
+<br>
+&nbsp; for (i=0; i&lt;polyCorners; i++) {<br>
+&nbsp;&nbsp;&nbsp; if ((polyY[i]&lt; y &amp;&amp; polyY[j]&gt;=y<br>
+&nbsp;&nbsp;&nbsp; ||&nbsp;&nbsp; polyY[j]&lt; y &amp;&amp; polyY[i]&gt;=y)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; oddNodes^=(y*multiple[i]+constant[i]&lt;x); }<br>
+&nbsp;&nbsp;&nbsp; j=i; }<br>
+<br>
+&nbsp; return oddNodes; }</code>
+</td></tr></tbody></table><br><br>
+
+
+
+This is a pretty smart optimization provided to me by Evgueni Tcherniaev:<br><br>
+
+<table border="0" cellspacing="0" cellpadding="0"><tbody><tr><td bgcolor="#E8E8E8">
+<code>bool pointInPolygon() {<br><br>
+&nbsp; bool oddNodes=NO, current=polY[polyCorners-1]&gt;y, previous;<br>
+&nbsp; for (int i=0; i&lt;polyCorners; i++) {<br>
+&nbsp;&nbsp;&nbsp; previous=current; current=polyY[i]&gt;y; if (current!=previous) oddNodes^=y*multiple[i]+constant[i]&lt;x; }<br>
+&nbsp; return oddNodes; }</code>
+</td></tr></tbody></table><br><br>
+
+
+
+<b>Integer Issue</b><br><br>
+
+What if youâ€™re trying to make a polygon like the blue one below (Figure 7), but it comes out all horizontal and vertical lines, like the red one? That indicates that you have defined some of your variables as integers instead of floating-point. Check your code carefully to ensure that your test point and all the corners of your polygon are defined as, and passed as, floating-point numbers.<br><br>
+
+<img src="integer_polygon_problem.gif">&nbsp;&nbsp; <b>Figure 7</b><br><br><br>
+
+
+
+<b>Polar/GPS Coordinates</b><br><br>
+
+A number of people have written to ask if this code can be applied to polar (GPS) coordinates, i.e. using longitude for X and latitude for Y. I think the answer is yes, but generally only if the polygon is confined to a relatively small area (like a U.S. state, for example). The two problems to watch out for are:<br><br>
+
+<b>1.</b> If your polygon has any single side that traverses a large distance on the globe, then the point-in polygon algorithm will be following a significantly curved path for that side (especially nearer to the poles), not a true, shortest-distance path as you would probably prefer. You can avoid this problem if you make sure that no single side of your polygon traverses a great distance.<br><br>
+
+<b>2.</b> If your polygon crosses the international dateline, then the algorithm will get totally confused by the abrupt reset of longitude. It may be necessary to add or subtract 360Â° to some of the cornersâ€™ longitudes to prevent this from happening. (But that solution will not work if the polygon goes completely around the north or south pole.)<br><br><br>
+
+
+
+Send me an <a href="mailto:DarelRex@gmail.com?subject=Point-In-Polygon">e-mail</a>!<br><br>
+
+<table border="0" cellspacing="0" cellpadding="10"><tbody><tr><td width="20"></td>
+<td bgcolor="#FFFF80"><span style="font-size:8pt;color:#808000">Does the <b>brace style</b> in the above code sample freak
+you out?&nbsp; Click <a target="BraceWindow" href="../brace_style/brace01.html">here</a> to see it explained in a new
+window.</span></td></tr></tbody></table><br>
+
+<table border="0" cellspacing="0" cellpadding="5">
+<tbody><tr><td bgcolor="#808080"><span style="font-family:Helvetica,sans-serif;font-size:8pt;color:#FFFFFF">
+<a href="http://alienryderflex.com/quicksort/"><font color="#FFFFFF">Quicksort</font></a>&nbsp; |&nbsp;
+<font color="#000000">Point&nbsp;in&nbsp;polygon</font>&nbsp; |&nbsp;
+<a href="http://alienryderflex.com/mouseover_menus_example.html"><font color="#FFFFFF">Mouseover&nbsp;menus</font></a>&nbsp; |&nbsp;
+<a href="http://alienryderflex.com/gyroscope/"><font color="#FFFFFF">Gyroscope</font></a>&nbsp; |&nbsp;
+<a href="http://alienryderflex.com/osmosis/"><font color="#FFFFFF">Osmosis</font></a>&nbsp; |&nbsp;
+<a href="http://alienryderflex.com/polarizer/"><font color="#FFFFFF">Polarizer&nbsp;experiment</font></a>&nbsp; |&nbsp;
+<a href="http://alienryderflex.com/equilibrium/"><font color="#FFFFFF">Gravity&nbsp;table&nbsp;equilibrium</font></a>&nbsp; |&nbsp;
+<a href="http://alienryderflex.com/vectors/"><font color="#FFFFFF">Calculus&nbsp;without&nbsp;calculus</font></a>&nbsp; |
+<a href="http://alienryderflex.com/overlappingmaze/"><font color="#FFFFFF">Overlapping maze</font></a>
+</span></td></tr>
+</tbody></table>
+
+
+
+</body></html>Ytext/htmlUUTF-8¨"&*.Ô_WebResourceResponse_&http://alienryderflex.com/tutorial.cssOúbplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_&http://alienryderflex.com/tutorial.cssÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀl,4 ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheXtext/css_Sat, 02 Aug 2008 01:15:03 GMTU14200_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 20:19:26 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:06 GMTS410Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBYdGV4dC9jc3OhEl8QE01JU1MgZnJvbSBsb2NhbGhvc3ShFFUxNDIwMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIwOjE5OjI2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNiBHTVShIlM0MTChJFprZWVwLWFsaXZloSZfEBMiMTlhLTQ1MzZmZDYwMzY3NzYioShVYnl0ZXOhKl8QHVNhdCwgMDIgQXVnIDIwMDggMDE6MTU6MDMgR01UAAgAJQAyADoAPgBCAEkAUQBgAG4AcwCCAI0AkgCgAK4AsAC5ALsA0QDTANkA2wD6APwBBQEHAScBKQFEAUYBVAFWAXYBeAF8AX4BiQGLAaEBowGpAasAAAAAAAACAQAAAAAAAAArAAAAAAAAAAAAAAAAAAAByw==_"19a-4536fd6036776"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂëğû
+!#*2=OQSUWY[]_acegikmƒ…‡‰‹‘“•—™›Ÿ¬º¾ÂÉÑàîó)1:Z`ˆ¨ÃÑñõ "(>CY]joƒ‡›©»¾Ô             ‚              ÖOšBODY,TABLE {
+  font-family: Verdana,Tahoma,Helvetica,sans-serif;
+  font-size  : 10pt;
+  line-height: 16pt; }
+
+H1 {
+  font-family: Verdana,Tahoma,Helvetica,sans-serif;
+  font-size  : 16pt;
+  line-height: 16pt; }
+
+CODE {
+  font-family: Courier,Courier New;
+  font-size  :  9pt;
+  line-height: 10pt; }
+
+A:link {
+  color      : #000000; }
+
+A:visited {
+  color      : #000000; }
+
+A:hover {
+  color      : #808080; }Xtext/cssÔ_/http://alienryderflex.com/polygon/Diagram_1.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_/http://alienryderflex.com/polygon/Diagram_1.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀlI, ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Tue, 19 Nov 2002 01:31:27 GMTT5120_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:05 GMTT4787Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTEyMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNSBHTVShIlQ0Nzg3oSRaa2VlcC1hbGl2ZaEmXxAUIjEyYjMtM2FmYzE0MTJhYjljMCKhKFVieXRlc6EqXxAdVHVlLCAxOSBOb3YgMjAwMiAwMTozMToyNyBHTVQACAAlADIAOgA+AEIASQBRAGAAbgBzAIIAjQCSAKAArgCwALoAvADSANQA2QDbAPoA/AEFAQcBJwEpAUQBRgFUAVYBdgF4AX0BfwGKAYwBowGlAasBrQAAAAAAAAIBAAAAAAAAACsAAAAAAAAAAAAAAAAAAAHN_"12b3-3afc1412ab9c0"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂôù(*,3;FXZ\^`bdfhjlnprtvˆŠŒ’”–˜šœ ¢¤¦¨µÃÇËÒÚé÷ü$2:Ddiˆ‘±ÌÚúÿ
+-3INdhuz’¦´ÆÉß             ‚              áO³GIF87a=È ÷  ÿÿÿ!!!)))111999BBBJJJRRRZZZccckkksss{{{„„„ŒŒŒ”””œœœ¥¥¥­­­µµµ½½½ÆÆÆÎÎÎÖÖÖŞŞŞçççïïï÷÷÷÷ïïÖÎÎ½µµŞÎÎJBB1))Ş­­ŞssŞ11ŞÖ  Ş  ç  çŞÖ¥œ”„{scZR÷ïçÿ÷ïŞÖÎ{skskcRJB1)!ïçŞÎÆ½ÿ÷çskZïïç÷÷ïÿÿ÷ççŞ¥¥œ÷÷çÿÿï„„{ccZRRJ¥¥”991çïï÷ÿÿÖŞŞŞççkssŞïïŞïÿï÷ÿks{¥ÆçµÖÿœ½ç”½ïs”½c„­s­÷)RÆŞÿ­Æç9Œÿ1„÷ kÿ­Îÿœ½ï„µÿ{­÷kœçJ”ÿ9„÷sÿ9„kÿ½ÖÿµÎ÷{­ÿs¥÷kœïR”ÿJŒ÷B„ï1cµ){ÿR½kÿ9Œcÿ 1„ cÿ¥½ç9BR”µïkœ÷9c­1Z¥JŒÿB„÷)Rœcÿ Zÿçïÿck{­Æ÷¥½ï„­ÿsœï!cï R÷ RÿÎÖç”œ­9Z­)Jœ9J{1BsÆÎç)9k÷÷ÿŞŞçÖÖç                                                                                                                                                                                                                                                                                                                        ,    =È  ÿ H° Áƒ*\È°¡Ã‡#JœH±¢Å‹3jÜÈ±£Ç CŠI²¤É“(Sª\É²¥Ë—0cÊœIód‡š8sêÜIÒ‡pp“§Ñ£H“ì`ÁA
+0p0Á€ ¢J³jİŠÒ'Ğ(`0AÃ:p `+×·pãFdêªÔ4¤UËaƒßjÙ^-*·°a®^ƒ†[ö,ß¿!nKø°åË3é>Ê ¯Ş´úFyò`Ì¨S›LV,Y³hC“MÛ´[Õ¸sWÔl·sŞ½²in»²îãÈ²^üÚqğáĞ¡ON]5oÎ‹Îûôêàß.ÿwİ8ööîèÑÏ~çõ»¿AŸOO?ıúöø[gûqıÿ úu_~ŠôoŸùà‚Xàƒí×œyVh!`kQá†s5µ|	>wáˆ:Èá‰–§ ‰,^hâ‰øyàaoÙÉ×â7¾cu0§¢ˆ8Ù¢;gÀ€Ù(ä’KYdj€Á|LV)¤“OZæ@@Zé%XfWLĞÁ—h2¦˜[mIešp²¸&›H‘ifœx9';AÀe€‚™ái|¾e@gª¨œƒŞVhRÁ›‹VÚ`£Æ=º“$jé§î©©J‘N
+ê©¡b:jNœzŠê«—
+ÿæèª/E9%¬¸.(*­¹Ii®ÀF·+¯Ùéj°Èª§*±(¹™ì³õË¬DÆBk­}ËN’Ÿ¿^ë-iÒj»Ğ¡Ç~knmÙŠ‹Q©İë®€éªKQ«ïÖ;\¸ê²kï¾èÊš©¼ÑËïÀàÆpB¶¶K°½ø®ê+œ¡u¹ğ•,PµpjAi±ÂG[1ÀÎ¦ÉAPq¶ÀÊxm¼qÇò}2€g‰1š8`@h@9à3X­2Ë¸Ì1ZG<ó½#3Ë-Ä B{©ÕóÏB-ÕÊ´ì2Ì|É¼tÍ'’1p0QÕ?5à³@½5ÑFƒı±Äß’ı ¾ivÿÔGl_wÖCw]ô×HÇ¬´µzç'pß
+8 RàncõÜ†×xØ‹¿Úxx|£ÉXPåoÇ­5\{ıòæwƒ\åçÔ=óxê–ËÍ:İˆ³·šMï˜pœ$ÀÀe¼~ùï†k`´ãö°É¤›\ó­ ì‚ú+æÍ¢c;„,@¹pV¯åŸÈë¬ûƒäê¾\õ{šÔ>ıéıoñßÙÒ¶!³
+€Z1`ûş!H
+|í+rB9ÉAˆ
+`¨hÛ‰.{è+“(ÁÔPğvçÓÊü:"@dq°&Ä™ò¶Ò£]DÏzaL§Ñ•N…ÀÄ
+ÿ5â@SyK‡.¹ŞÙR¨Í†Áà“…ÄÉ‰0O93Àâ D  P\ÛßUÅ“”¬‡Q›ZVp  Œi!K¨”ü}‰hS›R.€	é½‘#8d"Ç¾10)Š2ğG">pbeüH +˜`'kdF¤8¶Aâä„ü!"1Aµ0±#ÁLó Tâ$†(Ü"OØØ—Lº²!…œY` Yò”2\¤úXËSjd’KÛ  ä—XŞ„HId§übËŒ‚õ
+Ô˜â	L4Š%1IMcb„“ÉŒ	ØD.asHÌä")=UÍ‹¨R—:Ûİ¿™ÿÆ¤Ğ2õ´H.—Öşµó-Z§ÂÇïÔœA&AI·Ğ£ÜÓK~;@4¥r¬€RäšAB¨•:€;_êd 8‹RÆ9N8šŞg¨‰>S”<ñÀ<GãÒ¹ì“E'#€-åCí!˜±<Ê?y
+Ñ‰ ´Bx &ˆ²Á’ÖtšJ0ILÒô"6ePh€	¬ZJ«{|$ Šjijğ«éÀ9ï‰GlMŠ3ËÎœ°t6pmL‡àV•§IqâM,ÆS':-%m»‹–H¥@ÔY+NwjÜÔÉRÛTˆ<U¬ t@ÛÏ:ıô›yäªC'[Ú‡ÿ„µDVµ€ fûÙØ®~Y=dNÜ:Ê&D®9¢©a›Õ|ºöNŠê€JwòWá!ƒ*4=Ù)êo%$p×
+Íáî´¸µeˆe¤Ø¨Ö»VòaEyr[ŒZU´ ÙurÚ=V·¼¥Ş}ªÖ¬Ò4'ÕozÇ¥Y¼¶V Ë½ëˆĞŠ”½†Ò¨5!ntöKä&Ô·î.yqÊ“8O?ˆAú:“êB‡3@B"ƒÕF‡	NpĞƒÔà¡dğ<ı@.`qMÒ€IáŠúA#ÄĞ=ø`Éˆ0„	€ _¿üÀc¨ƒ†5dÁ]f‚Npì8ÿ:8ÈƒXá‰°D‘Ó$e1@"
+FqÃ ±8ààˆN´¢ÍèF;úÑŠÆÁè0h:h&‚fæĞH/z€ğ0†(Œõ!íé$” +XA
+JOÿ `ÀCªÿ ‚LºÄlMìbGzÒƒÄ¥C…f;ûÙĞv³¿ êQãaKh„¶·Íín{ûÛà÷¶/Ñ…j‚„¶º×ÍîvC›ÚÖÆC²-nmo€šÆÃ Ğğ„v¯!ßx@Ã$.QïF  Ö±FAÁ/1	4T›kpö>jFğaÏ¸ÆÇ]îQŸ;İîfwB*!3˜üä(ÿO¹ÊÍ ïxãaå0¹ÌgrJÇ{4Ï¹ÎiŞòxïØ>Ÿ9Ğ­sE¨€±f
+‘s—£åNß¹Ôinskã|ê)—C%rvÃÛãØŞ¸ØÇNns£»ëhOû»«­ï°üŞùŞw¿Ùıoœàõ>8Â^o†S\×oöÄÍİŒığŞ.»ÇÏ®vh‹ä‹ôŒMùÊ#R0ƒaiLG~“76¨«]ê…(áƒĞ4XiWÃZÖ´¶5¨ lF¡×™‚®Q†a[ş÷‹–´*½lXÈ¢ÅGœ!â5A$Ø ü=GçËasC"êã€;jf³ÿ›¹„+Ä!aò#š å4õ ~Œr€Èàû‹ê@`ğIL€ ø‡0&cq; xc9öf/Æ7ğ
+Q6vG@H`CõYå%FûåaÆN`öòuf2æ³X,ábé±_ÙEX¥–T¿tbÍ¥E4Y]FZš”ëuY”ÜÕ`u`›bVŠZ51Zõq]ı…Z$†ïuS–Õ["	 ×U_¸¥dA‚ö%†-æY•’Q;ÈQìµ`‚C‚„DxX%hrˆAø%Ò5„1á‚Oè†ƒÚ5…Q„=X!yE]ãµ„ø<ÿ(V€˜‡^¸‚Q…UÒ^îñZY5`0á„ BYQè_:Ød¨&œ…¡¨‡wØ]‰?h`È^Æ5¸$LH_F¸(‰èˆlˆˆn‡@b´(b¶(ŒŸ„ƒ½e†)á‡Ÿè†‚('ÂÕ–x%ÎY±¨‡§Èh!p%‰2]QŠx^¡…‡˜ ‡_³èØ†¯8©è…H‹t($'ÈĞU‰eŒ,ÑŠÜ¸`×Ø œØ†x%™´T‡ÚØ‹òUÀ('«ÈÓ˜\[•Sç˜MItI
+ùPï ÏH"»»õ‘^5:‘öM*™Û8"=åŸH‰Q‹Cÿr;‘›¨Œ&Ñ¾øñØ ÙHÄ‡)Oèh`I¹ş(“µŸ¸Q‘2ù’;Á’(i‚X¹I’¥‘$É&Ù’Üh“k”_[éhÙ‚9W¥5’$¢†“V”m•‘Ôƒ—«q^	ÕT4I3y“GùT™Z	5áÅ@ùM5”ŸØ•Ò8I–ş¤–*¸…¤¢pùƒRI3:	â*Õˆz‰3Ù_ù—š$–s9‘a—bEr‘˜z8˜Ëø–!Qry•„H˜¹(…óÅ<_’)1‰Wæ˜&Ø–a•ºšY¡SK9RÒI	–™4Ã—¢y’.›Zÿa›j2¬È™»ÙHŸi‚‡9²™¿ùÅ9WĞ p…'ÑöhL®)“–	œY×©B§)“õé À   -ÁŒy½¹3¨Ğùfäé…	º Z aÑ ­¤~i‹Œ„š&¸i£É•ñóù‚Ê :¢À,XÙÉš ğEki]Ç›õÈ^ÎiÔ™¡aŸ z£@¢:*O‰¢P³S a¥D9Š˜Ñ¡^U£!Š£Qº†JÈ$'S €Œ`"‘¡Ø†1£Ô¦N
+¥;Ú‘ä¤?P 	@™ö8¤ñ¢/ …‘¤sÊ¤6*¢Oš£wÿ
+Éy‰ø‰	Ğe¦GŠï©¥™,‰¨aº¨cz™Aºa€	ù…QŞIZê´©lÔ©vÊS
+©S5 S¹˜á¦¢* Ã‰†å©ºü©§Bª€E¨.
+Ñ‚¥HzKG!¡V"S³“šq©ÂÂ¦s*:·É‡‘ªİQ’×Ê=Ê/àz«~êÊ®«”®…¬êa­êz“«©Kò!Eú­€:¯á¬S®á­/V©üŠª Yé„Ik®™E¿Z°á EJ‚O\‚:Yp
+±D* +S!B¬Ÿµ±A­^e¬ë2R>"=Ú‘M(›[™š²–ÿzäá²Ë8ÒÚ+ç
+X«j³3Ò²!›C-
+ËS%´%A´,›³G+ ;´ùJîê´ÓŠ³ü1µg•µØZ˜µq¯ZP»Rû²L¹Œ?«NûZ¶#q¶P‘¶;«?okMğ:$å“p»rk´jK©|Û­W.dÛ·ÚÈµ¯áµğt±O+¶n£ˆ‹K·+"V$¸ª°ƒ;¹”«¸ ¸Í©™&±´€qªËE «³—+,=·…û·˜º‡Q¹]+ºµ‘´=¹Ô³´‹«Ë¸²{·«·5û»©a»‹«¶{û°!¨UÈ{Êºöy¸ñ÷8½ì¡¼ ¹»˜œ€¶Ü«Ğ¹¡å»!i£Yµë·vÙ¼ñ‹¼©ª¾õ›ºÓ¿ù«µ¥ˆ‰ı›ºµè°L»9»ì¹U¨P	L»$˜ElÀõh«,¿™uŸºZÁú« @¾|­ºÅæùÁ“kX ¾$±k à¼)®0U/<¹¤Ÿ3,´‰äÂ7l1:¼Ã>üÃ@ÄB<ÄÇ ;Yimage/gifÔ_/http://alienryderflex.com/polygon/Diagram_2.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_/http://alienryderflex.com/polygon/Diagram_2.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀl\- ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Tue, 19 Nov 2002 01:31:26 GMTT5120_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:05 GMTT3235Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTEyMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNSBHTVShIlQzMjM1oSRaa2VlcC1hbGl2ZaEmXxATImNhMy0zYWZjMTQxMWI3NzgwIqEoVWJ5dGVzoSpfEB1UdWUsIDE5IE5vdiAyMDAyIDAxOjMxOjI2IEdNVAAIACUAMgA6AD4AQgBJAFEAYABuAHMAggCNAJIAoACuALAAugC8ANIA1ADZANsA+gD8AQUBBwEnASkBRAFGAVQBVgF2AXgBfQF/AYoBjAGiAaQBqgGsAAAAAAAAAgEAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAcw=_"ca3-3afc1411b7780"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂôù(*,3;FXZ\^`bdfhjlnprtvˆŠŒ’”–˜šœ ¢¤¦¨µÃÇËÒÚé÷ü$2:Ddiˆ‘±ÌÚúÿ
+,2HMcgty‘¥³ÅÈŞ             ‚              àO£GIF87a­ € ÷  ÿÿÿÿÿşÿÿıÿøîşşÿşşşüú÷ùùùøøøøöó÷÷÷ö¸¸õõõõïäôôôóóóóòîóñîóğêò÷ÿòòòñññğğğïïïîîîîêåííííçÜíæÛìõÿìôÿìììì±·ì€€ëôÿëóÿëëëë  êêêéêêéééèèèèPPççççåâææææâİåïÿåååäääãããââââàİáêöáááàààßßßŞŞŞŞ  İŞŞİİİİ  ÜÜÜÜ  ÛÛÛÛ  ÚÚÚÙÒÈ×××ÖÖÖÕİéÕÕÕÔÔÔÓÓÓÒÒÒÑÑÑĞÖàĞĞĞÏ×ãÎÕàÎÎÎÍÕáÍÔáÍÍÍÌÌÌËâÿËËËÊÊÊÇÇÇÆÆÆÂÂÂÁÙÿÀÀÀ¿¿¿¼¼¼»»»ºººµ±¬³³³¯Çìªªªª¦¡©Áç¨Áæ§Àå¦¦¦ŸŸŸ›››’›¦’’’’†µÿ~­ø}¬÷}}}},p|||y¤ğxrhwwwwqfv¦ğusot|ˆtttrrrqqqppppi_ooommmlllk–âkkkj™åjjjiiihhhhfcgggf_Ueeedddcccc\Rbbbaiu`^[___^^^^XM]]]]\XZZZWWWVVVUUUSSSFFFEt¿A:0>‰ÿ=l¸<<<:::8_ª7776ø6÷3332b­1110_ª000///.TŸ...---,~ÿ+++***&&&   |ÿvÿsÿrûtÿrûpÿoüjÿiÿChügüfûdúdù:… 
+
+
+\ò\ñ hÿ dÿ cÿ bÿ _ÿ ^ÿ \ÿ [ÿ Zÿ Xÿ Vı                                          ,    ­ €  ÿ H° Áƒ*\È°¡Ã‡#JœH±¢Å‹3jÜÈ±£Ç CŠI²¤I…H|XÉ²¥Ë—0cÊœI³¦Í—
+œÙÙ/`@ƒ
+J´¨Ñ£H“*]:TØ¯
+;?²Â$„ŠÕ«X³jİÊµ«×¯`Ãbmò%Ù‡¨É˜ƒ²b†Û·pãÊK·®İ»xóÂ…A	´IŒsƒ"‡áÃˆ+^Ì¸±ãÇ#'NÁÆÙÀÿÜBqC²çÏ C¾ĞÉ‘NÌIxScB´ë×°=cĞ5FÍ+pÄŞÍ›÷lA¶-ZÇº·ñã ¯ÊTİÈ£K_|áğåÁ”Scº÷ï>-ÿÂ.‘%ßÓGŸÑ$šòÁ€›"C½ıŞ3¬ s ÿ¡yô÷ÛT sV©E}6"¸`„9hág(!Bšqvá‡Ù„_"¤Zq ¦Èe–•xnĞ©(ãa¤™æbAÃ¡8ã³Õv#AÍ=·ãÊı(vÜI¤&×ùŸ’CV×äòÑåáçäyWÎÈ{F*È`—)æ·ßfŸ^l¶9Ã€jXb‡©ÇÃbå™g1ğàZ†7Øšz3,QÌOL%º”2iú`œ7Â¸æ× qÓ¥7rKn¢‰Hb‰9:šŞ8¸`‚ŠÆâe%£zHÿRf’‚Vãi"Ù]€p¢f©&G›‹O
+¨"§(@ë¦¯FVd®óyŸXHóª«‰ê,“%+Ù[±Í Å/ V«dRn(¦g<(E` o
+6€ÙW8ÓjÁJ–¥„izÆŞ4ÉDÓÉ%š`ÂFVÁ+/ôÚ{©°ÔaÛ¹}ù‚tzFª-|ˆ ‚,âL/@MspÂ7ï¼68 	!¶õ›±~üõgsdhÂ*} ÆÈ%ŸœòÊ
+'(ˆ‡qc€ö÷4d”-C)­44É&÷òK4Û Br b¬D‚&íÌXÔä…šKè+	$ä0Í'—\ÒÉ4@õÿâÌ"c—ıÁÙM­ÛØ¹ÅrddA/>P€ÁMX•˜h¢7ßÀø¸ d›6Ej+æéµØéêZÏ‘àZ	Ò`Áà[6¤ğ0å–c®ùŞ}ÿ¸èØªğyZÕW[¤À)Šh±[µß^9—g¾yïŸ‡>øè1°ŒİJ^•Ò‚·ÜéÁ	€Bo»¼¸S¯ûõûºŠàrCŒõX<—¯a\F
+!	 ‡vï›Üôª·»hcMxScœuÁ†u®£H`ş}Òƒ‚üä
+òk0j‚ò0Òg\A‚’XcÒµœÅæ|ûº~’)ÿ
+Néÿ‡X4.5±+ß•4œ ôY½©€%!€‹`ƒˆÀÃ‚!ø"¨ğĞ2œ 7;È@¸10d!XÀA: ŠWÁ;èÒ\à„D@£˜ÙÂ3àrŒ4H¤"ÉÈF2rh0Æ9àñŒ-(D?ÂTPAª#Ö8ÃIÊRšò”§ÜÀªás4Ã’!€F@ËZÚr/ <Ò‘v¨‚	O‚0‡IÌbs˜O`Â*ÜÁKxâ·¬%tĞjê µÌå.ÓáU ó˜à§8ÇÎd.³™ÏŒf-=@€ˆL ¼Ø…<çIÏa¼¼DG;˜ÿbøóŸ ¨@ÿf´Ÿé@Ç;†AÏyêÂ%ĞDK`]ÈÓÕ'?ÊÑzô£-èAó¹Ğ†Î“µ˜@Dd©N[æ²¼ìæ7É9Ns2S¡éTç4«YMlÒR›	m‡7ƒIÓ¢µ¦Êdf:œ	Í–²ó#U<ŞAQ¢òª4P%5Ş±lÀ!˜Ô$'	"Hx°Cf%V×ÊVSªÒéPG%†o‚QÀ#]:ÈÂoŒãAÄˆŠJH WÚ£ZQ
+7¢…åxCF ÀEò°‰l“ØÃ²<4Z„€ü¡	Ó–­ïàğ"ìàiáÿõF€iáÄ¸-=´È{H&&FEqé1-é’X\œEEuêymE–×¼âBj'Æûn+¢>öA	q$!_€‚[ÔZ7B'ÉnrÙ`5‹ÄÖƒC:İI,xéRD·>ñJ0mw"ÃÍïÄW
+ˆ¼ìºä?ş¶ÖAÊ•uw¥Õ‚Ä¶®[)Ò]s‹$¿uĞ%bŞ+ÑV$Èµ‚%òŞ+õ6$Ğ½P„#‚ßï¶gc"Qoƒì+‘ ×¹"/ˆF+QEàõˆ´bˆLø»×	}A4cˆtXII
+gÄãˆ”8¾#B]á6ßù!-ÖoeXå‘!^¨ÿÉ©q”J“Á`ÂìM^D|¼$y$Ä\Öğr¼¤)q$Å3:sC\èÄxHpvÈ•l© JUvÈ—gôbJ]~H\![/İXÉ—†’¢b$\c·^òF¦¥A"!Yû î@®9#ÅX‚€?”å×mÙKo‘ä… 28*Ùu¯‹†2`c‘ĞË’°z)Ê1ğ}à¢léY
+YX„¶3'eüäÚÙŞöUp`‡EËàNÍƒ×“ìeÃozèV÷î8gíSt©Ğ„¬Bo{×Ë-eu˜íÅ×Ûß
+<wºµM¿‚\{+)H <Qˆoñ1ûÿÅ ¡ÖosS!àçPŠağß±ä!bp††}òÄ#)¾¸Ëa>ğ Ğüã‚9F,¹çˆi0FäSø;~DïøÑm®ô,ÏŞ…ºb,,aZ€âŠˆ9Á·º¤Ë	-‚ …Å¾²GÄÎ@0jŞö–”(ç;§;u*‘T`rF2Ó.xÅt:ñùzØo\Èƒ$îso|Ì”3Ëğ<ïy±=¿ô¦?]ôù&½F$¯yÃŒ^õ‰»"ŞsùÂ¾#bÈfPoˆ=œöjnÑí9r€^ #ÙNÃ{± ßB?~F
+`iSÛÚØ–7î{“[HêÒIˆÖ¬ß5ì'¿eÛgşïÕc÷ğ‡dü¼¾>¼µÏıæ??4íwÿIàßëòÏ_ùé3Ş'¦ıÁò—} Xë÷g€.‚€ş§€èÇ€Xy{h4ÿW½÷ãÒyh€ˆ2ÿ·Z`#¸‚±¿ğ,ƒ(ñ9!ƒ6xƒ8˜ƒ:¸ƒ<h ;Ô !_/http://alienryderflex.com/polygon/Diagram_3.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_/http://alienryderflex.com/polygon/Diagram_3.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀlnD ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Tue, 19 Nov 2002 01:31:22 GMTT5120_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:06 GMTT2004Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTEyMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNiBHTVShIlQyMDA0oSRaa2VlcC1hbGl2ZaEmXxATIjdkNC0zYWZjMTQwZGU2ZTgwIqEoVWJ5dGVzoSpfEB1UdWUsIDE5IE5vdiAyMDAyIDAxOjMxOjIyIEdNVAAIACUAMgA6AD4AQgBJAFEAYABuAHMAggCNAJIAoACuALAAugC8ANIA1ADZANsA+gD8AQUBBwEnASkBRAFGAVQBVgF2AXgBfQF/AYoBjAGiAaQBqgGsAAAAAAAAAgEAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAcw=_"7d4-3afc140de6e80"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂôù(*,3;FXZ\^`bdfhjlnprtvˆŠŒ’”–˜šœ ¢¤¦¨µÃÇËÒÚé÷ü$2:Ddiˆ‘±ÌÚúÿ
+,2HMcgty‘¥³ÅÈŞ             ‚              àOÔGIF87aS e ÷  ÿÿÿşşÿşşşúúúùùùôôôóğìò÷ÿòòòğğğïïïî÷ÿîîíîèÜííííçÜíæÜìôÿììììêçì  ëôÿëóÿëëëêêêéééèèèèäİççççãİçãÜææææâİåïÿååååâİããããáİâêöââââáßâàİááááàŞàæåàààßßßßßŞß  ŞîîŞèèŞååŞááŞßßŞŞŞŞ  ŞooŞHHŞ  İŞŞİİİÛÛÛØÑÆÖÙßÕÛåÕÙßÕ™ ÓÛèÓÓÓÑÑÑĞÖàÎÕàÍŞêÍÕáÍÔáÍÍÍÇÇÇÁÙÿ¿Üÿ¸Øÿ¸Òÿ¸µ®···¶±¬´®¥³³³±±±¯¯¯®®®­Íÿ­®®­­­«««ªªª©Åğ¨Áæ§§§¦¦¦¢¢¢¡¡¡ Áô »ç œ• š•œœœ›››ššš˜˜˜˜•———–¶é•••†¶ÿ†††„´ÿ€§ÿ€€€||||,pzzzyyywwwuuus£îs¢îsssqqqo™ïlllhhheeedddYYYP”ÿIIIIE@H‹õHHHEEEDÿDDD@@@?Šÿ>‰ÿ<<<;Sz;;;:::9996÷666555444222111000///...,~ÿ***'''vÿtûsÿrû|ÿtÿrû+Moüiÿhühù`õ	E¯	E®gÿfÿgÿfÿ dÿ cÿ aÿ `ÿ _ÿ ^ÿ ]ÿ \ÿ [ÿ Zÿ Xÿ Uÿ                                                                                                                                                         ,    S e  ÿ H° Áƒ*\È°¡Ã‡#JœH±¢Å‹3j´X`£ÇŒúØê“á£ÉˆôÄÒ”GS,=%OÊD˜r¥˜>ˆq	s¦O 55İÄà‚‡:yÆü¹1èP6¢F=šôåR¦~ *µëT¤;­b¨•«×³6¨†í9¶aY¨hã¦«´mÂ·ró~­ÊÖ®@¼zÏå{•)`ÁˆÕÖıy±ãÁk7U)t+ÜÇ˜÷FöØ8³gÅb/vöLòb‰£K«İ×-å§ªcÇe-¹ €wlZ–Í{6İXw2@ˆ ©.»{+GKµ)X
+èRKL‚åØã&S«Ëğ„Xšµÿ) "»y
+Ö4ÃÒ¯A=Dœ_~ıC)–2µ?_v}ö0	'-|ĞŸjÿMD€$›¡Á%HŒÌ²†>&¡E\4sa†‚mxÑâ‘¢\"bä|üØUŠá§_‹.Â¨‘€X£z Ê´`ƒ‚hãGZ¨@
+@ÂY5Èƒ5döÂxÀ muÈÆ{ğ‘;HEÃ7àpÃ4<¶ÂeüáÅöÙEÅ*´ £Œ,_<B
+(°ƒ€æÀ
+{jè¡%t€È1Ëü’K”Vjé¥,àH2Â“L%F¡BÀ ¨0„¬¶êª«?¸ÿaÌ0Â£Ë˜æjA t€'£„"ì°Ä‹
+2Át2¬˜’Ê)vPp*vœ’ÊµØf›­(µv*L1Â+®°£xr B’êªk,Ói2‹ !*©¦šêª¯æËjdìBL­Çd¡î¥¼nÔ„+Ë(sK$>LÀ§Ÿ§
+Jè¡ïi€¸øÂ2…øEPrÀaÂ!FÚ0f™g¦¢zS81'Ôá‡M>åÊÍhsC$W†XîÜŞ{ñ96¤ĞÉ¸Î="İêu´Óıè ŠAS`…5µÖ
+ÍŒá‹Yƒ-QÏäñ€^ÙfK´b|_·ÍŒ¨§Ü`&ªTÿwFV4sIt[„E/i$Ë…SŞpğÆİ;ô8†-Ô·Eå–{8vTé£Ç œ+tùY„ñ	$”~ĞégñpAœHÒºëÁ—´KR[áºËÅ;%‹»|^$HNùßÇë•¹z›ïy„kˆNºÜÍ;–úê·ƒ½c²÷Ş½ÓßcÆ{í¿ÛU~fÃ/ôú%?yÓêOŸİóÍD_×ç…>z[ğãÍöX‡• ò&|µßI¨œóùn&\Nûg’bG~ËS‘ı\ÔüéOƒüã Wüw=ÃmP„¨S+bA!Ğv™N-ÀP€ 0/.Ğ ¡ˆ|ç!Å)¹˜ À†7´AT ¸€c D3@A¸‡Ü†”P'ü@D#"1CKlâÓ ˆN”â€ˆƒ+"‚:dq‹]<âyÂèD"ÑŒ­DD ´ñ\,¢eCÇ1–±yÜc}òG-Ò‹™)¤™H>z¬‘päã"É;"R–¤&9È¨t’’ \$ŞFÙÅˆq’xL%î 0Ê% •ŠœåAşøÉ\ê’!På/‡IÌbÓ' ;Ô#$%_/http://alienryderflex.com/polygon/Diagram_4.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_/http://alienryderflex.com/polygon/Diagram_4.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀl€ ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Tue, 19 Nov 2002 01:31:21 GMTT5120_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:05 GMTT1733Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTEyMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNSBHTVShIlQxNzMzoSRaa2VlcC1hbGl2ZaEmXxATIjZjNS0zYWZjMTQwY2YyYzQwIqEoVWJ5dGVzoSpfEB1UdWUsIDE5IE5vdiAyMDAyIDAxOjMxOjIxIEdNVAAIACUAMgA6AD4AQgBJAFEAYABuAHMAggCNAJIAoACuALAAugC8ANIA1ADZANsA+gD8AQUBBwEnASkBRAFGAVQBVgF2AXgBfQF/AYoBjAGiAaQBqgGsAAAAAAAAAgEAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAcw=_"6c5-3afc140cf2c40"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂôù(*,3;FXZ\^`bdfhjlnprtvˆŠŒ’”–˜šœ ¢¤¦¨µÃÇËÒÚé÷ü$2:Ddiˆ‘±ÌÚúÿ
+,2HMcgty‘¥³ÅÈŞ             ‚              àOÅGIF87ae A ÷  ÿÿÿÿÿşşşÿşşşıııûûûûôéùùù÷÷÷öööôôôóóóóğìò÷ÿñññğğğïïïîîîîçÜííííæÜìôÿìììì  ëôÿëóÿëëëêêêêæßééééæáèèèçèèççççãİæææåïÿååååâİããããáİâáßâàİááááàŞàæåàààßßŞß  ŞîîŞèèŞååŞááŞßßŞŞŞŞ  ŞooŞHHŞ  ÚÚÚÙÙÙ×××ÖÙßÕÙßÕ™ ÔÔÔÓÓÓÒÒÒĞÖàÎÕàÍŞêÍÔáÌÌÌÆÆÆÅÅÅÁÙÿ¿Üÿººº¸Òÿ¶±¬³³³²²²°Èî°°°¯¯¯®®®­Íÿ­®®­­­«©¦ªªª©©©¨¯»§§§¢½ê Áô œ•™”œœœ˜˜˜——˜———–¶é’’’Œ¼ÿŠŠŠ†µÿ†……„´ÿ„„„€§ÿ|,pzzzy¤ğyyyxxxwwwvvvsssrrrqqqpppooonnnm†¬mmmkkkjjjiiihhhfffd“ädddbbbaaa```XXXWWWVVVR•şQQQP”ÿLLLJJJH‹õHHHFFFBBB@@@?Šÿ>‰ÿ<<<;;;:::9998887776ø666111000/+$...,~ÿ,,,(((   vÿtûsÿrû|ÿtÿrûoüiÿ(T	E¯ fÿ[ğgÿ dÿ cÿ bÿ aÿ `ÿ _ÿ ^ÿ ]ÿ \ÿ [ÿ Zÿ Xÿ Vı Uÿ Lá                                                                                                                                 ,    e A  ÿ H° Áƒ*\È°¡Ã‡#JœH±¢Å‹3jÜÈ±ãDCŠ4Hå•‘(=V	†(X•”01V©V¦@™j/cêŒ8sÆàÜI”aÏŸ6€
+ÍYtd‚&thS‘vì(”:•êÒ«!é á ×®^­‚İHç”)YT<‹6-ÓµïˆÚ°ÅV„tëÚÅ›ñO XmXğ`Âù • ?†<1O1=¢è`®æS³éªw9?lÒE SH#5­µêŠ±KÓ¦mû6OÙ»ƒ÷öİ0spÁÃ‰'4~ùWå™7w®:`àÓ§'‡.=»ãí¾»{ÿÿşœ¸øñä«s¾‚½y1dÔ_d'o˜<iœÆŒ8Ü0ô‘áh°ÁU831»€Á€
+Vhá…¦ĞB:t˜C)`("†øA3ÑÌ²DFTÁ‹0Æ£Í(sŒ2¿|ñÃ<öèã<ê F ©äEq	3È&$Èh%Œ€P¥¬’Ê—`†	æ1Ëc¦ªÀ¢æšl¶©¦+q\Päq¸âæm¶‹3Æ˜i4¯ˆ)è—«”Ò B-^y%Q&ÃŒ>,)©Dvxd’’.Ùä'Ì˜9e•ŠÊ˜eF4óL3’ˆ€Âˆ¬jÈ¡‡ ²ÿ*+R #MŠ+å.…xaãù €B¼Ì¡Æ‚M­1Š¼€ïÅ7ßx%QL€u€'{Ì6í¸6¸B&”àU‚.Jœ@î»œ!ÌxµAÊ
+.¼;n¶Ãh×·áê;­¹è• }D1Ğºí
+Œ^¼ó•F$pTr öâë°wüúKÔZ´aÉ  ,îÆÁœ.Q@‰‰à Ãî¢ÜÄôÕA/;@pÊ ß›¯ÍÁuÜ ²ˆ¤< IÀDï¦òZ €'°[sÔ¦áÌYÆC{·Â¾CôË™Éb Al=İÔœÑÜÜ
+XĞƒŒôr¸ªœ×_½İv‹¡-²"‡&µÂ·ßš}6¸'£Eøİ‡'EÎ @±IãÓwÜZv¹áˆ²9BƒŞ·f€®ñT§g®:ç
+µîøëhI>9Ôµ§¾zDº‡Ôè¤'1Bİ˜ûDÅ¿û×<Àêš?QñQŒÇª!ÀI(‡8?Rë„p2	qÈr‹ ÃÃ(¹,@Ü 8pUYÖõïÿÿ   C ;Ô'()_/http://alienryderflex.com/polygon/Diagram_5.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_/http://alienryderflex.com/polygon/Diagram_5.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀl‘Ú ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Tue, 19 Nov 2002 01:31:20 GMTT5119_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:05 GMTT1825Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTExOaEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNSBHTVShIlQxODI1oSRaa2VlcC1hbGl2ZaEmXxATIjcyMS0zYWZjMTQwYmZlYTAwIqEoVWJ5dGVzoSpfEB1UdWUsIDE5IE5vdiAyMDAyIDAxOjMxOjIwIEdNVAAIACUAMgA6AD4AQgBJAFEAYABuAHMAggCNAJIAoACuALAAugC8ANIA1ADZANsA+gD8AQUBBwEnASkBRAFGAVQBVgF2AXgBfQF/AYoBjAGiAaQBqgGsAAAAAAAAAgEAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAcw=_"721-3afc140bfea00"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂôù(*,3;FXZ\^`bdfhjlnprtvˆŠŒ’”–˜šœ ¢¤¦¨µÃÇËÒÚé÷ü$2:Ddiˆ‘±ÌÚúÿ
+,2HMcgty‘¥³ÅÈŞ             ‚              àO!GIF87ae J ÷  ÿÿÿşşÿşşşıııüüüûûûúúúùüÿùùùøøø÷÷÷ööööñëóøÿóóóóñîò÷ÿñññğğğïïïîîîîçÜííííæÜìôÿìììëóÿëëëêêêêæàêæßéìğéééèèèçççæææååååäâåâİääääáİãããâìéââââàŞâàİâ  áááàààßäíßßßŞííŞëÿŞææŞåòŞââŞŞŞŞİİŞÍÍŞ¨¨ŞssŞŞ  İŞŞİİİİ67ÛİáÛİßÛÜßÚÓÉÕÕÕÔÔÔÓÓÓÓ ÑÚéÑÑÑĞÎËÎ×ãÎÏĞÍÖâÍÕáÍÔáÍÔàÌÌÌÅÅÅÃÈÏ½½½»»»ºÕÿ²Ğÿ°Ìö°°°¯¯¯¯¯­®®®­­­¬¬¬«««ªªª©©©¤¿é¤¤¤»èœœœœš—›››˜˜˜–––‡‡‡†´ÿ††††…ƒ…™………„„„€ªÿ}}}|®ÿ|||zzzyyyxxxvvvuuusssrrrqqqpppnnnmmmlšåjğhhhfffeeed‘äcccP”ÿPPPL‘ÿKKKEEEDDDCCCB‡õ>>>===;;;:::888777666555000/(...,~ÿ,,,((('''&gè%%%#~ÿ"""!!!   vÿsÿtÿsûuürû!*:jÿjş:†jÿJ­
+iş
+hü			bÿaÿaş   eÿ cÿ bÿ aÿ _ÿ ]ÿ ]ò Yÿ Xÿ Wÿ Uÿ Tÿ Sÿ                                                                                                                        ,    e J  ÿ H° Áƒ*\È°¡Ã‡#JœH±¢Å‹3jÜÈ±£Gˆ|IRà—WJªä¸%Y1	+c^ô‚­Í¨2sJ¤™È+œ:ƒ2¤©ÆÁ”ŸB“"$:aÅQ J£`ŠÃ)R©J©V}Šu¤?~DÔºõjW#6åÉ³iDA²e¡ÕX”;§ö„w.ÇA™Àòù2o_¿ÅPZ°€‘†#Îˆ§T)=¦bS3‡çÏ­Ê|Ñ‚È›;ƒ-štÇÈŸ[»Ö;6×ÙDÈ±¶m³¸)|=4õêã¡oãŞBˆ¾Y+wíHÕ$XF—|2˜JÊèÿÊŞp;wâ~õ ÀÔ†òÆ‘Ë—Lº! f½_È÷ÆŒ7ÌWB«0ÔnĞ…B"Ô2H$Ø—\9Ô <èPCÇ¡ !¹h!T\SÍ1Y(tÅc¤a€B](ƒÆ-ÔX£
+;ôàƒ=ì ‚5š0„$Ó,cLŠ€L6é¤“wXÃ3ĞğCXf™¥$P€Z†6qØ EhFñDAì¸cM<‘fDBÍ”ĞìBÃ“|6‰A AàI*¨jè¡†şâÌ”ËDCË+F*é¤”BêK0¤È¢é¦±ˆ’„;º„(±l*‹+Ã,:e3­ êj¡©xÿBJöÙg”S>CLLLáë¯À+ìN(Åœh®Ù¦›pÊ™fwR©§­|ş‰Q‹0#2ft°Â·à†+î¸à² $8êÈ£ç
+I¤‘HêôA/‰qÁ|øæZ…f¸a‡†˜œTàÁú&œ¯ 
+H A!€I ª)lñÅç	E‚0T¤€ñÇË¦Ó¼ È(ë+²LSœòËó­ÓÆÃlój2{ô•D²É7MŸÎ ¢É%	0qÅBÃœ3G}@o( Ç7móÓ©GĞÏ'kíôt}Ç¬8P‰ËbİGÕÙÂ…X·í6zmØv¿ÿÌµG-3İ÷Ç)ñÊ~+Ñœõà“ º¤ßŒ_CKX‚¼©xå;¾†.€“â '|yæ¸6rÉa§>Ÿè¤›®Óç²Ë·ºæ®…zîÇÑ^ºRrl4ğŸíŞzT
+l "Ÿ»ğ¶+%0¡’2H‚ô}+ß{TlP‡!·¼Ò	"Ûwÿ}ìMS?™$à¾úìsï=ø)‹›@ô³_úÖ×¾ıÁ/t"İğşW Ş€ú{ŸÂüÇ@…8p€ùsÿ@#¿
+:ä‚ø+ =CAJ„tß	X;b…ˆ8Ã*±<rä‚°xDõlè	à‡@¢‡HÄ  ;Ô+,-_,http://alienryderflex.com/polygon/crowns.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_,http://alienryderflex.com/polygon/crowns.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀl£œ ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Sun, 12 Mar 2006 04:33:14 GMTT5120_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:06 GMTT2156Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTEyMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNiBHTVShIlQyMTU2oSRaa2VlcC1hbGl2ZaEmXxATIjg2Yy00MGVjNGI5NmM1ZmY5IqEoVWJ5dGVzoSpfEB1TdW4sIDEyIE1hciAyMDA2IDA0OjMzOjE0IEdNVAAIACUAMgA6AD4AQgBJAFEAYABuAHMAggCNAJIAoACuALAAugC8ANIA1ADZANsA+gD8AQUBBwEnASkBRAFGAVQBVgF2AXgBfQF/AYoBjAGiAaQBqgGsAAAAAAAAAgEAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAcw=_"86c-40ec4b96c5ff9"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂñö
+%')08CUWY[]_acegikmoqs…‡‰‹‘“•—™›Ÿ¡£¥²ÀÄÈÏ×æôù!/7Aaf…®É×÷ü)/EJ`dqvŠ¢°ÂÅÛ             ‚              İOlGIF89aÌ ï Ä     ÿÿÿÀ@ÀZ€€3€À™À@MÀ fÿ MÀ 3€ @@ÿ@sÀ€³ÿ@Z€ÀÙÿÿ  @  ÿ@@ÿ€€ÿÀÀÀÀÀ€€€@@@                        ,    Ì ï  ÿ` dihª®lë¾p,Ïtmßx®ï|ïÿÀ pH,È¤rÉl:ŸĞ¨tJ­Z¯Ø¬vËíz¿àÓ©„G À|¤Ù1d}~«Ù`{œ|Ï«ÿt_vpXrx[ƒ€ˆZŠ{s‡\ƒ“’€j•YššXƒon‹£h¥V“˜…d"S¯®§°£ª„Wr¦‘´»&±Oš¶¡º}Q¿$ÇKÂ¬%ÉHĞÄN¯Ì¸­Ï³JÒÈÛI±×V¹¾ßFİÚ½àßâUäåêçæ+è>ÇíTïğÅòñ/õ;’á›¢oµ! Q$¼m ”‚ıX¨pi£@Œ(„b
+0ºe„²‘ãD‹3@ÿ¶@7òII“QÒP©¢^K'/aæ IOf€7›äÔiƒ'£Ó$¦Êd(Ñ”>q ]Èt‰Ó§!£îÔZÑßŠªJ®b]Éu«W²gU€M"vlÍ²:<‚\‹¤­ÛHg–UI÷ˆİ»ŞÒH³¯‘¿€E	îÇï#Ü†‹ ¾›×lãÄ_Was&u^å¸›ˆLd2ŞoŸ¢=Zó¸l–¦©®2é!¦»›İƒë·o<x"·î5¼í-JœFƒ‡­úÒåÎ”[?˜£yŒÂXĞ ¼yóÈœ_Ï¾½û
+¬3xOŸ¾ƒ?´ÿ^êšÈğâ(`x1à&^ÿ|  àƒ	&€ßI‹ÑàİwâI‡‚q_Y`R[e„‡ØwpèÂmqa-’Q#gCH 0ÆøÃŒ7èH†3.¶ Ç>ú ddÀXddH¤’'6Á¢ğ$HÀâ”<,IÃ—ZŠ°å
+Y@&˜8ˆ)Ãš#œéœlZXetšIİyÖ	ƒ›/ô©å|¦é§€Î9JzèŸwjDè£ZD&hq0ÈYÃ=êè†Q A§.0Ê‚¦3tÙe¦¤‚é
+<’º#’¢B¥¨:ªiã
+¨ÊÀ™¥R@,ŒÄêŠ$‘qJ‚­8c«¨Ñ²(íÿ•¼NªÄ¯qJÉi°Ær*e¬ã¶èmÍÊ*‚´ëFÛî¦šĞkÜšéä·ZâûíNBËì«¼ªëî´×Rm«òj›ÁqŞ.¹á‚ËâÄñ^‘î³íÖzë¬Ê~špÅîjo¾Æ.{lÉRÖZì‰Ş0/¥TŞòÈ0[Ñ²/×¼ÃÍ›*¬ó<ÓóÏmŒ“ÏDCôC']ÃÒ24íôPÇ õÔ1T)ÒX/¡õWwíÂ×/r-6diöÙF¤}êÚlËh´PpÇ-„ÛÙB²İŞ|÷í÷ß€.øà„÷ıHáˆ'®øâŒ+E‹(ùä”Wnùå˜g®ùæœwîyæv‡.úÿè¤—núé¨§®úê¬·îúë°Ç.ûì´×nûí¸ç®ûî¼÷îûïÀ/üğÄoüñÈ'¯üòÌ7ïüóĞG/ıôÔWoıõØg¯ıöÜwïı÷à‡/şøä—oşùè§¯şúì·ïşûğÇ/ÿüô×oÿıøç¯ÿşü÷ïÿÿ   ıdˆÆğ€L à§À:ğkÆç&HÁ
+Zğ‚´ (š=¼© l¨óà¢:8·¦Ôx"ÜĞ	—B1¬Ğw-ü	eæö.†% áépHš‡q²!ï€¨'šˆƒ2¢ñèÃÒ1Qˆ»{¢‹'ÅÃy–ò¯¶6ÅÃ MZüB¨FE/ÿ.FAU+3ÒÅXBÄêYÉÒ˜®r%ÇBq=–°P&‚“Å1Jèj£¼d•¥‚²ZH£»h„Dv+_WÄÊ®5Váb#à–&ß5$5	rdÃ é0‡ñkPa¼¤ s(°C2ì`j
+c×$ÊQ~k\’„ØÄ¬H²
+cî’#®œQÇ>ùNğ²%²L¶£e¦ÿòåò¤ÃKu-…t¡5¯¹J!P¬ˆ‡™Ø»)9ô‹‘8hÒÉ	„Z!©iîLåÙZ¬N6íH–œ';u0yÅê¥š€<ÙF¶çDç“mHƒˆÚ 5 …‡<îIêCQú© Íèyî£†üPÿDE“fş!ñ%M©€ /¨T¥ê(…®Ó}ÚÀ¡Zä„¯Be¡´Ù
+Ò–¢œÊ°<…—¿,±ÚI¤’B§’šÈ2õÌ±)n JªöÑª›(Ågª¨¯À¬¨˜…m´ZN®–lHC+/®“²2	®(+’»Ö@¯% ,¤a¿¦
+¬*ì:*ÄÃÆ@±nD¬2´R¶!7=Af;²Ö8vª’-^KÓT8–Âd6›Ö•;ÿxÌgaÚÇÖ<¡Èl[{[Û–³§5mi‡šÚØÅµ-@®^‚{®ì6²¿Ír"Ôt2ñÅõX¦+Z‘½Ö©Ë½î{ÖŞâ€»Â…-h*DŞ·zw§æ¥.s¡²ò¢W÷µ®z{ƒ’çæ¿ñmî|‹b‘İş÷°ÑÍÊ€2Ù˜èMNz•òÙÿ5Àúo~áXÛ ¹vA8²Ûƒ‚xø®ï=†‰`ó@'>o|C,_~Ø5ÆÒí-eã18.kmwLß>T1È;+‘Ã»)"™f]r>ác)ÁW ª”	|‰G`IÀ‚Ûåf¤xIoáeŸZ§ûmÄÇ)7ã‚S+¶˜‡Èç>ûùÏ€´ Mh§…  ;Ô/01_=http://alienryderflex.com/polygon/integer_polygon_problem.gifO	bplist00Ô~X$versionX$objectsY$archiverT$top † ¯)#)*0123WXYZ[\]^_`abcdefghijklmnopqrstuyU$nullİ	
+ !"___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1€€€	€€(€€ €Ó$% '(WNS.base[NS.relative€ €€_=http://alienryderflex.com/polygon/integer_polygon_problem.gifÒ+,-.Z$classnameX$classesUNSURL¢-/XNSObject#AÀlµ‘ ÈÓ456FVWNS.keysZNS.objects¯789:;<=>?@ABCDE€	€
+€€€€€€€€€€€€€¯HIJKLMNOPQRSTU€€€€€€€€€ €!€"€#€$€%€&€'\Content-Type]Last-ModifiedSAgeSViaVServerWExpires^X-Cache-Lookup]Cache-ControlTDate^Content-LengthZConnectionX__hhaa__TEtag]Accept-RangesWX-CacheYimage/gif_Sat, 02 Jun 2007 02:33:25 GMTT5120_1.0 localhost (squid/3.1.19)XApache/2_Thu, 18 Jan 2018 22:50:46 GMT_MISS from localhost:3128]max-age=14400_Thu, 18 Jan 2018 20:16:06 GMTT2129Zkeep-alive_
+
+YnBsaXN0MDDeAQIDBAUGBwgJCgsMDQ4PERMVFxkbHR8hIyUnKVxDb250ZW50LVR5cGVXWC1DYWNoZVNBZ2VTVmlhVlNlcnZlcldFeHBpcmVzXlgtQ2FjaGUtTG9va3VwXUNhY2hlLUNvbnRyb2xURGF0ZV5Db250ZW50LUxlbmd0aFpDb25uZWN0aW9uVEV0YWddQWNjZXB0LVJhbmdlc11MYXN0LU1vZGlmaWVkoRBZaW1hZ2UvZ2lmoRJfEBNNSVNTIGZyb20gbG9jYWxob3N0oRRUNTEyMKEWXxAcMS4wIGxvY2FsaG9zdCAoc3F1aWQvMy4xLjE5KaEYWEFwYWNoZS8yoRpfEB1UaHUsIDE4IEphbiAyMDE4IDIyOjUwOjQ2IEdNVKEcXxAYTUlTUyBmcm9tIGxvY2FsaG9zdDozMTI4oR5dbWF4LWFnZT0xNDQwMKEgXxAdVGh1LCAxOCBKYW4gMjAxOCAyMDoxNjowNiBHTVShIlQyMTI5oSRaa2VlcC1hbGl2ZaEmXxATIjg1MS00MzFlMzI4MDZmYzJmIqEoVWJ5dGVzoSpfEB1TYXQsIDAyIEp1biAyMDA3IDAyOjMzOjI1IEdNVAAIACUAMgA6AD4AQgBJAFEAYABuAHMAggCNAJIAoACuALAAugC8ANIA1ADZANsA+gD8AQUBBwEnASkBRAFGAVQBVgF2AXgBfQF/AYoBjAGiAaQBqgGsAAAAAAAAAgEAAAAAAAAAKwAAAAAAAAAAAAAAAAAAAcw=_"851-431e32806fc2f"Ubytes_MISS from localhostÒ+,vw_NSMutableDictionary£vx/\NSDictionaryÒ+,z{_NSHTTPURLResponse£|}/_NSHTTPURLResponse]NSURLResponse_NSKeyedArchiverÑ€_WebResourceResponse€    # - 2 7 c i „ ¦ È Ë í ğ;>Ac…ˆŠŒ’”–˜™›Ÿ¡¨°¼¾ÀÂ!$-68:AITfhjlnprtvxz|~€‚„–˜šœ ¢¤¦¨ª¬®°²´¶ÃÑÕÙàè÷
+$-2@HRrw–Ÿ¿Úè$:@V[qu‚‡›Ÿ³ÁÓÖì             ‚              îOQGIF89aÕÇ ¢     ÿÿÿ fÌ@Ù€³æÀÙóî     ,    ÕÇ  ÿºÜş0ÊI«½8ëÍ»ÿ`(dihª®lë¾p,Ïtmßx®ï|ïÿÀ pH,È¤rÉdBsJu®Ø¬vËíz¿à°xL.w«z%Ğğ8ÇL¯Ûïø|MXûıQorƒ„z‡ˆ‰Šc|m…’h‹•–—x›“ŸG˜¢£¤[šœ¨ ¬=¥¯°•§©´‘­¸4±»¼wpµÀ¨m‚¹Å)½ÈÉa¿ÁÍ©«ÆÑ ÊÔÕXÌÎÙ©·ÒİÖàÉØÚäÛĞŞèáë»ãåï´çéÑìõ¥p}ğúÁÜó­ö 1áÛGĞÙ0“*\4° ÃlòNYHñPÃ‡³õ“˜¤ÿ¢G_³2Š4‘#(ÍÄÉ^I“9RÊ³²¥MxaÖ˜ÉÓKÍ›@q¾Ô¹¢§Q-?ƒ*Õ7”(‰£P$]JU_N§!¢“¯ªW‚±~Ğj”ë×³›Š…@¶§Y´p1^]k¨íÌ·qóÊU«Óîİ‹zgäëÏ¯L9‚°*İŠ#;dÜxëã’3ã|ìø2Í 5^îìYEèÓÀ<“.¢+ê×ˆÑ]ÍÚ„kØ°eÏ¶\ûÄmÜ§uï.ÛÛ7ğÜµiñû¸dÊ¬•/á<4ôè¼§¨®ù:vâÚ·sìı»ÛğâÇ'Ö.=õ‰…›çé9|½òçÿ­ÿ¡ù}ªÿùéwıı‡V€¦D`h•WB79XœOFĞ± ş%!	òGa^¸ÀY0€M%öö!!Š˜†W)†aA1&wF…*¹ø"U5~ ¡M®8D‹"VÕã'¶„àrB
+Aä…<¶0#AK2y#ˆ9º8åCGzğ#KUZÉE(YŠ¸%.Ø¦˜¦àX†œ¹O—$¹œMñä‚rnÖÂ—"Ñ©â•,–yaŸåÚAKŠÚ8¦›dÀ¹c /Ø™Q£¶‰å›p²„©ˆj#éyd(””º hFk¢Wê{.˜ª–bÔª«„yª¬rÁª3·âúè¦‘Âùë60¬úP°ÿÂjZ(§:ËÉ§x:ª¯ú+Ò>B­µNv-¶¹:¹+·`Å ,šãÖ5ì³ÅF;§w¶ë®³ºB«£U2„[½ä¾›o¼û¾ó-¨#1K`¶®œK Á2¬K%Àãk®¾.&:ƒ¿û(¼ Ã<lû°6#Ì*Å€¼ƒÈüıZró‹rÅHAÊˆ¤¡¾œÁ¬3«S®·ÜŒÎpìgÏ÷ÖLìÍÆòCCÌ#Mó6Ó„30Dc ’Ô)ÿl*ÆÓ’õF¿ã1^Ã4b×Ğ-*g£-ğÅ<mP—·Üv‘w×P69{ó­4¼LwºÉØ¼½øZQ0^Ê:°,´-ÿ6äM2Q‘ÿ±SÚÚ®]ßo’[Ğ«DsòùÜ~×­%$7.Z:©×²zß_»n¦¥W y6İÔîÌí‡œ¸¼jô^­¹_ñT/mõ¨Éã ;° 8¿ô×T½ÌµOàà¸#…ÿ ıCÜ_Aæß"*OÁïÍ”¯Ãù#¥/•÷`p]©¸SĞÓ„¢ÓŸŒø—ÿ-€ìàà‡µ#ğ+ÔÓ3/!<0.<ŞMäóàzÉàô6¸@‡ÈÌŒ¿GB
+êã„HáiV˜¿Š „µ€¡dˆ~Á†œ˜”>h Mør@Œ Û–Şçˆ K"pˆ¬8±ˆ€"ëÿ¤XñUOFDÄ"9´ˆ;.J`‰ÂğÀÅhÄA%ĞŒøWÖÈÆT±xp” áÖÅ0Ö1#wŒ^Ï(ÄĞñÀs£é„5àˆ|"5ÈHìqo€d$õÈîUÒ^Üd^®e˜Wø ¢Tá¨Jy\2•‘!%+GÑƒPÂ.²œ¥@v€Ê[Ær•ºÜ¥|	Ÿ\S:x%1×Ìc"½\&3%åLKSšã1f5‘eb3„ÍÜ&7o`ËoB0œâÔÃ¢iNpR3ã\;¹£Mx‚„åœgUêiÏ:àMŸôDg?ıI€ô½g¼iP
+4¡oL;êÿP„BÔr( huøyÑÒJ£ÎáhGkø‚|‚T)")C0Ñ“¢%¥*İ"
+êÒ³À4¦xlbMsSœzr-İé9-êÓbF¨ÀéiQ[@S¤zE©>ı“S{H…¢¶EUS}M¬J–5«@Ù*W£’,°‚F¬cÍTÍ*´¦õ<ee«bÜúÖıÄU®îlB]Á£.¼æ•	{…kÄü:ÊªÖ®ƒ%ìW @Wk|_UìĞ¤ ‡z<²’½	eå`ÙË> ²™U…WÆÏb6´q(:kZ€–°ŒıGi[ûYÔjd³¸`-mğÚ©â¶ºİ-z[SÕz#¸Â] q)jÜtÿ 7¹
+Xî<c‹çB7 Ò•&u9bİëf÷–¿5Iw½+×æ:e¼äõíh2Ûë*Q¨ÛåL{İ{ZÆW5ó¥omŞ)C¿ø.nÌË&p 8Àß$0{ò{`×ó¾Í2pƒ	)J×½p^úû1OØÁbT°‹0üa/EÄ†sì‡ß§?”+ös\<.ÇØÄá0Ål|ãÓ xf<î±d~Œ´ 904æš‘Ü OpÉL®Š“Iå(…È6¬²•G‚å$jyË“™²¿f¡—ÌeÖ†˜+‰æ4£Ëm³›9gÏÊyÎ¼[3mï<ç$_—ÏeÖóŸ=c/ı¡Îôt¡!„h +ºĞ´¤'MéJ[úÒ˜Î´¦Ç•  ;    1 < K b t Š ¨ Í ÎHaHkHqHzHƒH™HÂQÀS^SgSpS¢\«obolouo§x¯…V…_…‘™–q–z–¬Ÿ´¦}¦†¦¸¯À¶å¶î·À"È’È›ÈÛÑñ             2              ÚF
